@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   GameState, 
@@ -375,7 +376,7 @@ function App() {
                    <div className="flex justify-between items-center"><span className="text-stone-400">Kazanılan Altın:</span><span className="text-yellow-400 text-xl">+{dailyStats.gold}</span></div>
                    <div className="flex justify-between items-center"><span className="text-stone-400">Kazanılan İtibar:</span><span className="text-blue-400 text-xl">+{dailyStats.rep}</span></div>
                 </div>
-                <RetroButton variant="primary" fullWidth onClick={handleNextDay} className="h-16 text-xl">SONRAKİ GÜN >></RetroButton>
+                <RetroButton variant="primary" fullWidth onClick={handleNextDay} className="h-16 text-xl">SONRAKİ GÜN &gt;&gt;</RetroButton>
              </div>
           )}
 

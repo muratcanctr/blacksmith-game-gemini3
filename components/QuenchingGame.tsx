@@ -11,6 +11,7 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
   const [temp, setTemp] = useState(100); // Starts hot (100)
   const [isRunning, setIsRunning] = useState(true);
   const [targetZone, setTargetZone] = useState({ min: 30, max: 50 });
+  const [showSteam, setShowSteam] = useState(false);
   
   const requestRef = useRef<number>(0);
 
@@ -41,41 +42,65 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
     };
   }, [isRunning]);
 
+  // Space Key Handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && isRunning) {
+        handleStop();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRunning, temp]); // Dependencies important for closure capture
+
   const handleStop = (finalTemp?: number) => {
     if (!isRunning) return;
     
     setIsRunning(false);
     const currentTemp = finalTemp !== undefined ? finalTemp : temp;
     soundManager.playSizzle();
+    setShowSteam(true);
 
     // Calculate Score
     let score = 0;
-    // Calculate center of the target zone
     const targetCenter = targetZone.min + (targetZone.max - targetZone.min) / 2;
     
     if (currentTemp >= targetZone.min && currentTemp <= targetZone.max) {
-      // Perfect zone
       score = 100;
     } else {
-      // Distance from center
       const dist = Math.abs(currentTemp - targetCenter);
-      // More forgiving scoring: Max score 100, decrease based on distance
       score = Math.max(10, 100 - (dist * 3));
     }
 
     setTimeout(() => {
       onComplete(Math.floor(score));
-    }, 1500);
+    }, 2000); // Wait for steam animation
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full p-4 bg-stone-800 border-4 border-stone-600 retro-border">
-      <h2 className="text-2xl text-blue-300 mb-4">SU VERME</h2>
-      <p className="text-stone-400 mb-12 text-xs text-center">
+    <div className="flex flex-col items-center justify-center w-full h-full p-4 bg-stone-800 border-4 border-stone-600 retro-border overflow-hidden relative">
+      <h2 className="text-2xl text-blue-300 mb-4 z-10">SU VERME</h2>
+      <p className="text-stone-400 mb-8 text-xs text-center z-10">
         Sıcaklık göstergesini yeşil alanda durdur!
       </p>
 
-      <div className="relative w-64 h-64 flex justify-center mb-8">
+      {/* Center Visual Animation (Water Tank) */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+          <div className="w-full h-1/3 bg-blue-900 absolute bottom-0"></div>
+          {/* Hot Item entering water */}
+          <div className={`w-10 h-40 bg-orange-500 absolute transition-transform duration-500 ${isRunning ? '-translate-y-20' : 'translate-y-20'}`}></div>
+      </div>
+
+      {/* Steam Animation */}
+      {showSteam && (
+        <div className="absolute inset-0 pointer-events-none z-30 flex justify-center items-end">
+           <div className="w-16 h-16 bg-white rounded-full blur-xl opacity-0 animate-steam delay-100 absolute bottom-1/4 left-1/2 -translate-x-10"></div>
+           <div className="w-24 h-24 bg-white rounded-full blur-xl opacity-0 animate-steam absolute bottom-1/4 left-1/2 -translate-x-1/2"></div>
+           <div className="w-20 h-20 bg-white rounded-full blur-xl opacity-0 animate-steam delay-300 absolute bottom-1/4 left-1/2 translate-x-10"></div>
+        </div>
+      )}
+
+      <div className="relative w-64 h-64 flex justify-center mb-8 z-20">
          
          {/* Side Indicators (Visible outside the tube) */}
          <div 
@@ -100,13 +125,11 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
                className={`absolute bottom-0 w-full transition-none ${isRunning ? 'bg-red-600' : 'bg-stone-500'}`}
                style={{ height: `${temp}%` }}
             >
-                {/* Bubbles / Texture */}
                 <div className="absolute top-0 w-full h-2 bg-white/30"></div>
                 <div className="w-full h-full opacity-20 bg-[radial-gradient(circle,_rgba(255,255,255,0.4)_1px,_transparent_1px)] bg-[length:4px_4px]"></div>
             </div>
 
-            {/* Target Zone Overlay (On Top of Fill) */}
-            {/* z-index ensures this sits ON TOP of the red liquid */}
+            {/* Target Zone Overlay */}
             <div 
                className="absolute w-full bg-green-500/40 border-y-2 border-green-300 backdrop-blur-[1px] z-20"
                style={{ 
@@ -132,12 +155,19 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
         disabled={!isRunning}
         fullWidth 
         variant="primary" 
-        className="h-16 text-lg max-w-xs"
+        className="h-16 text-lg max-w-xs z-20"
       >
-        SUYA BATIR!
+        SUYA BATIR! (BOŞLUK)
       </RetroButton>
       
       <style>{`
+        @keyframes steam {
+          0% { opacity: 0; transform: translateY(0) scale(1); }
+          50% { opacity: 0.8; transform: translateY(-40px) scale(1.5); }
+          100% { opacity: 0; transform: translateY(-100px) scale(2); }
+        }
+        .animate-steam { animation: steam 2s ease-out forwards; }
+        
         @keyframes bounceX {
           0%, 100% { transform: translate(0, -50%); }
           50% { transform: translate(5px, -50%); }

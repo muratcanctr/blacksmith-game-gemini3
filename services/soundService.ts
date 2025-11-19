@@ -3,17 +3,23 @@
 class SoundManager {
   private ctx: AudioContext | null = null;
   private masterGain: GainNode | null = null;
+  private bgmOscillators: OscillatorNode[] = [];
+  private bgmGain: GainNode | null = null;
+  private isPlayingBGM: boolean = false;
+  private bgmTimer: number | null = null;
+  private noteIndex: number = 0;
+  private isMuted: boolean = false;
 
   constructor() {
     // AudioContext is initialized lazily on first user interaction
   }
 
-  private init() {
+  public init() {
     if (!this.ctx) {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       this.ctx = new AudioContextClass();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.3; // Global volume to prevent ear bleeding
+      this.masterGain.gain.value = 0.3; // Global volume
       this.masterGain.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') {
@@ -21,7 +27,102 @@ class SoundManager {
     }
   }
 
-  // Helper to create an oscillator
+  public toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.masterGain) {
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.3, this.ctx!.currentTime, 0.1);
+    }
+    return this.isMuted;
+  }
+
+  // --- BGM SEQUENCER ---
+  // A longer, "Medieval Town" style loop in D Dorian mode
+  private melody = [
+    // Section A (Main Theme)
+    { note: 293.66, dur: 0.4 }, { note: 0, dur: 0.1 }, // D4
+    { note: 440.00, dur: 0.4 }, { note: 0, dur: 0.1 }, // A4
+    { note: 392.00, dur: 0.2 }, { note: 349.23, dur: 0.2 }, // G4, F4
+    { note: 329.63, dur: 0.2 }, { note: 293.66, dur: 0.2 }, // E4, D4
+    
+    { note: 349.23, dur: 0.4 }, { note: 0, dur: 0.1 }, // F4
+    { note: 523.25, dur: 0.4 }, { note: 0, dur: 0.1 }, // C5
+    { note: 440.00, dur: 0.4 }, { note: 392.00, dur: 0.4 }, // A4, G4
+
+    { note: 293.66, dur: 0.4 }, { note: 0, dur: 0.1 }, // D4
+    { note: 440.00, dur: 0.4 }, { note: 0, dur: 0.1 }, // A4
+    { note: 392.00, dur: 0.2 }, { note: 349.23, dur: 0.2 }, // G4, F4
+    { note: 329.63, dur: 0.2 }, { note: 261.63, dur: 0.2 }, // E4, C4
+    
+    { note: 293.66, dur: 0.8 }, { note: 0, dur: 0.4 }, // D4 (Long)
+
+    // Section B (Variation)
+    { note: 349.23, dur: 0.3 }, { note: 392.00, dur: 0.3 }, // F4, G4
+    { note: 440.00, dur: 0.4 }, { note: 293.66, dur: 0.4 }, // A4, D4
+    { note: 349.23, dur: 0.3 }, { note: 329.63, dur: 0.3 }, // F4, E4
+    { note: 293.66, dur: 0.4 }, { note: 261.63, dur: 0.4 }, // D4, C4
+
+    { note: 349.23, dur: 0.3 }, { note: 392.00, dur: 0.3 }, // F4, G4
+    { note: 440.00, dur: 0.4 }, { note: 523.25, dur: 0.4 }, // A4, C5
+    { note: 493.88, dur: 0.4 }, { note: 440.00, dur: 0.4 }, // B4, A4
+    { note: 392.00, dur: 0.8 }, { note: 0, dur: 0.2 },      // G4
+
+    // Loop back Transition
+    { note: 440.00, dur: 0.2 }, { note: 392.00, dur: 0.2 }, // A4, G4
+    { note: 349.23, dur: 0.2 }, { note: 329.63, dur: 0.2 }, // F4, E4
+    { note: 293.66, dur: 0.4 }, { note: 0, dur: 0.4 },      // D4
+  ];
+
+  public startBGM() {
+    if (this.isPlayingBGM) return;
+    this.init();
+    this.isPlayingBGM = true;
+    this.noteIndex = 0;
+    this.playNextNote();
+  }
+
+  public stopBGM() {
+    this.isPlayingBGM = false;
+    if (this.bgmTimer) {
+      clearTimeout(this.bgmTimer);
+      this.bgmTimer = null;
+    }
+  }
+
+  private playNextNote() {
+    if (!this.isPlayingBGM || !this.ctx || !this.masterGain) return;
+
+    const { note, dur } = this.melody[this.noteIndex];
+    
+    if (note > 0 && !this.isMuted) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      
+      // Square wave gives that distinct 8-bit NES vibe
+      osc.type = 'square'; 
+      osc.frequency.value = note;
+      
+      // Lower volume for background music so it doesn't overpower SFX
+      gain.gain.value = 0.08; 
+      // Gentle envelope for each note
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+      
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      
+      osc.start();
+      osc.stop(this.ctx.currentTime + dur);
+    }
+
+    this.noteIndex = (this.noteIndex + 1) % this.melody.length;
+    
+    // Calculate delay for next note (slightly shorter than dur to create staccato feel if desired, or match exactly)
+    this.bgmTimer = window.setTimeout(() => {
+      this.playNextNote();
+    }, dur * 1000);
+  }
+
+  // --- SFX HELPER ---
   private playTone(
     freq: number, 
     type: OscillatorType, 

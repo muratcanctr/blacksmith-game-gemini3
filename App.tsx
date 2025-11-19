@@ -43,6 +43,9 @@ function App() {
   const [loadingCustomer, setLoadingCustomer] = useState(false);
   const [showShop, setShowShop] = useState(false);
   
+  // Music State
+  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  
   // Daily Progress State
   const [customersServed, setCustomersServed] = useState(0);
   const [dailyStats, setDailyStats] = useState({ gold: 0, rep: 0 });
@@ -97,6 +100,16 @@ function App() {
     }
   };
 
+  const toggleMusic = () => {
+    const muted = soundManager.toggleMute();
+    setIsMusicMuted(muted);
+    if (!muted) {
+        soundManager.startBGM();
+    } else {
+        // Optional: Stop BGM if preferred, but toggling mute is smoother
+    }
+  };
+
   const fetchCustomer = useCallback(async () => {
     setLoadingCustomer(true);
     try {
@@ -126,6 +139,7 @@ function App() {
 
   const handleStartDay = () => {
     soundManager.playDayStart();
+    soundManager.startBGM(); // Start music on first day start
     setCustomersServed(0);
     setDailyStats({ gold: 0, rep: 0 });
     fetchCustomer();
@@ -304,11 +318,19 @@ function App() {
         {/* Header */}
         <header className="h-20 bg-stone-800 border-b-4 border-black flex items-center justify-between px-8 shrink-0 z-30 shadow-md">
           <div className="text-yellow-500 text-lg flex flex-col">
-            <span className="mb-2 tracking-widest text-shadow">RETRO DEMİRCİ</span>
+            <span className="mb-2 tracking-widest text-shadow">BLACKSMITH SIMULATOR</span>
             <span className="text-stone-400 text-xs">GÜN: {gameState.day}</span>
           </div>
           
           <div className="flex gap-6 items-center">
+            {/* Music Toggle */}
+            <button 
+                onClick={toggleMusic} 
+                className="bg-stone-700 p-2 border-2 border-stone-500 text-xs text-white hover:bg-stone-600 active:translate-y-1"
+            >
+                {isMusicMuted ? '🔇 MÜZİK KAPALI' : '🎵 MÜZİK AÇIK'}
+            </button>
+
             {phase !== 'DAY_START' && phase !== 'DAY_SUMMARY' && (
                <div className="text-sm text-stone-400 mr-4 border-r-2 border-stone-600 pr-6">
                   Müşteri: {customersServed + 1}/{maxCustomers}
@@ -445,14 +467,17 @@ function App() {
                   )}
 
                   {/* 2. Cutting Minigame */}
-                  {phase === 'CUTTING' && (
-                      <CuttingGame onComplete={handleCuttingComplete} />
+                  {phase === 'CUTTING' && currentCustomer && (
+                      <CuttingGame 
+                        targetItem={currentCustomer.requestType}
+                        onComplete={handleCuttingComplete} 
+                      />
                   )}
 
                   {/* 3. Hammering Minigame */}
-                  {phase === 'CRAFTING' && selectedMaterial && (
+                  {phase === 'CRAFTING' && selectedMaterial && currentCustomer && (
                       <CraftingTable 
-                          targetItem={currentCustomer!.requestType}
+                          targetItem={currentCustomer.requestType}
                           material={selectedMaterial}
                           upgrades={gameState.upgrades}
                           onComplete={handleForgingComplete}

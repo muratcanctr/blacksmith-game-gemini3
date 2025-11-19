@@ -2,12 +2,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import RetroButton from './RetroButton';
 import { soundManager } from '../services/soundService';
+import { ItemType } from '../types';
 
 interface CuttingGameProps {
+  targetItem: ItemType;
   onComplete: (score: number) => void;
 }
 
-const CuttingGame: React.FC<CuttingGameProps> = ({ onComplete }) => {
+const CuttingGame: React.FC<CuttingGameProps> = ({ targetItem, onComplete }) => {
   const [cutsLeft, setCutsLeft] = useState(4);
   const [cursorPos, setCursorPos] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -85,10 +87,49 @@ const CuttingGame: React.FC<CuttingGameProps> = ({ onComplete }) => {
     }
   };
 
+  // Render item shape based on type
+  const renderItemVisual = () => {
+    let path = "";
+    switch (targetItem) {
+      case ItemType.SWORD:
+        path = "M40,80 L50,20 L60,80 M30,70 L70,70 M50,80 L50,95";
+        break;
+      case ItemType.DAGGER:
+        path = "M45,70 L50,30 L55,70 M40,70 L60,70 M50,70 L50,90";
+        break;
+      case ItemType.AXE:
+        path = "M48,90 L48,20 M48,30 L20,30 L20,50 L48,50";
+        break;
+      case ItemType.SHIELD:
+        path = "M30,30 L70,30 L70,60 Q50,90 30,60 Z";
+        break;
+      case ItemType.HELMET:
+        path = "M30,50 Q50,10 70,50 L70,80 L30,80 Z";
+        break;
+      default:
+        path = "M30,30 L70,30 L70,70 L30,70 Z"; // Square block
+    }
+
+    return (
+      <svg viewBox="0 0 100 100" className="w-24 h-24 drop-shadow-lg mx-auto">
+        <path d={path} stroke="white" strokeWidth="4" fill="none" className="drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" />
+        {/* Spark effect at cursor pos projected to 0-100 */}
+        <circle cx={cursorPos} cy="50" r="2" fill="yellow" className="animate-ping opacity-50" />
+      </svg>
+    );
+  };
+
   return (
     <div className="flex flex-col items-center justify-center w-full h-full p-4 bg-stone-800 border-4 border-stone-600 retro-border">
        <h2 className="text-2xl text-stone-300 mb-4">MALZEMEYİ KES</h2>
-       <p className="text-stone-500 mb-8">Kalan Kesim: {cutsLeft}</p>
+       <div className="text-stone-500 mb-4 flex items-center gap-2">
+         <span>Kalan Kesim: {cutsLeft}</span>
+         <span className="text-xs text-yellow-500">({targetItem})</span>
+       </div>
+
+       <div className="mb-8 opacity-80">
+         {renderItemVisual()}
+       </div>
 
        <div className="w-full max-w-lg h-16 bg-stone-900 border-4 border-stone-500 relative mb-12 overflow-hidden">
           {/* Metal Bar Visual */}

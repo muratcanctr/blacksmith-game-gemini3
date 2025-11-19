@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   GameState, 
@@ -16,7 +15,8 @@ import {
   MATERIAL_MULTIPLIERS,
   BASE_ITEM_VALUES 
 } from './constants';
-import { generateCustomerRequest } from './services/geminiService';
+// Updated import to local service
+import { generateCustomerRequest } from './services/customerService';
 import { soundManager } from './services/soundService';
 import CraftingTable from './components/CraftingTable';
 import CuttingGame from './components/CuttingGame';

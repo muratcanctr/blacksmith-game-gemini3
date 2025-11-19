@@ -11,7 +11,7 @@ class SoundManager {
   private isMuted: boolean = false;
 
   constructor() {
-    // AudioContext is initialized lazily on first user interaction
+    // AudioContext is initialized lazily or on explicit call
   }
 
   public init() {
@@ -22,15 +22,20 @@ class SoundManager {
       this.masterGain.gain.value = 0.3; // Global volume
       this.masterGain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+  }
+
+  // New method to force resume the audio context on user interaction
+  public async resumeContext() {
+    this.init();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      await this.ctx.resume();
     }
   }
 
   public toggleMute() {
     this.isMuted = !this.isMuted;
-    if (this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.3, this.ctx!.currentTime, 0.1);
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 0.3, this.ctx.currentTime, 0.1);
     }
     return this.isMuted;
   }
@@ -73,7 +78,9 @@ class SoundManager {
   ];
 
   public startBGM() {
+    // If already playing, don't double up
     if (this.isPlayingBGM) return;
+    
     this.init();
     this.isPlayingBGM = true;
     this.noteIndex = 0;
@@ -91,6 +98,9 @@ class SoundManager {
   private playNextNote() {
     if (!this.isPlayingBGM || !this.ctx || !this.masterGain) return;
 
+    // If context is suspended, we continue the loop but no sound will come out until resumed
+    // This keeps the music logic running so it 'starts' immediately when resumed
+    
     const { note, dur } = this.melody[this.noteIndex];
     
     if (note > 0 && !this.isMuted) {
@@ -116,7 +126,7 @@ class SoundManager {
 
     this.noteIndex = (this.noteIndex + 1) % this.melody.length;
     
-    // Calculate delay for next note (slightly shorter than dur to create staccato feel if desired, or match exactly)
+    // Calculate delay for next note
     this.bgmTimer = window.setTimeout(() => {
       this.playNextNote();
     }, dur * 1000);
@@ -180,39 +190,41 @@ class SoundManager {
 
   public playClick() {
     this.init();
-    const t = this.ctx!.currentTime;
-    this.playTone(400, 'square', t, 0.1, 0.5);
+    if (this.ctx) {
+        const t = this.ctx.currentTime;
+        this.playTone(400, 'square', t, 0.1, 0.5);
+    }
   }
 
   public playHammerHit(quality: 'bad' | 'good' | 'perfect') {
     this.init();
+    if (!this.ctx) return;
+    
     if (quality === 'perfect') {
-      // Heavy thud + high ping
       this.playNoise(0.2, 0.8);
-      this.playTone(880, 'triangle', this.ctx!.currentTime, 0.3, 0.6); // A5
-      this.playTone(1100, 'sine', this.ctx!.currentTime + 0.1, 0.4, 0.4); 
+      this.playTone(880, 'triangle', this.ctx.currentTime, 0.3, 0.6); 
+      this.playTone(1100, 'sine', this.ctx.currentTime + 0.1, 0.4, 0.4); 
     } else if (quality === 'good') {
       this.playNoise(0.15, 0.6);
-      this.playTone(440, 'square', this.ctx!.currentTime, 0.1, 0.3);
+      this.playTone(440, 'square', this.ctx.currentTime, 0.1, 0.3);
     } else {
-      // Dull thud
       this.playNoise(0.1, 0.5);
-      this.playTone(150, 'sawtooth', this.ctx!.currentTime, 0.2, 0.3);
+      this.playTone(150, 'sawtooth', this.ctx.currentTime, 0.2, 0.3);
     }
   }
 
   public playCustomerEnter() {
     this.init();
-    const t = this.ctx!.currentTime;
-    // Door chime (Ding-Dong)
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
     this.playTone(523.25, 'sine', t, 0.5, 0.5); // C5
     this.playTone(415.30, 'sine', t + 0.4, 0.8, 0.5); // G#4
   }
 
   public playCash() {
     this.init();
-    const t = this.ctx!.currentTime;
-    // Cha-ching
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
     this.playTone(1000, 'square', t, 0.1, 0.3);
     this.playTone(1500, 'square', t + 0.05, 0.1, 0.3);
     this.playTone(2000, 'square', t + 0.10, 0.3, 0.3);
@@ -220,17 +232,17 @@ class SoundManager {
 
   public playSuccess() {
     this.init();
-    const t = this.ctx!.currentTime;
-    // Fanfare
-    this.playTone(523.25, 'square', t, 0.2, 0.4); // C
-    this.playTone(659.25, 'square', t + 0.2, 0.2, 0.4); // E
-    this.playTone(783.99, 'square', t + 0.4, 0.4, 0.4); // G
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.playTone(523.25, 'square', t, 0.2, 0.4); 
+    this.playTone(659.25, 'square', t + 0.2, 0.2, 0.4); 
+    this.playTone(783.99, 'square', t + 0.4, 0.4, 0.4); 
   }
 
   public playDayStart() {
     this.init();
-    const t = this.ctx!.currentTime;
-    // Rising scale
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
     this.playTone(220, 'triangle', t, 0.2);
     this.playTone(440, 'triangle', t + 0.2, 0.2);
     this.playTone(880, 'triangle', t + 0.4, 0.4);
@@ -238,10 +250,11 @@ class SoundManager {
 
   public playSaw() {
     this.init();
-    const t = this.ctx!.currentTime;
-    // Sawtooth wave that pitch bends slightly
-    const osc = this.ctx!.createOscillator();
-    const gain = this.ctx!.createGain();
+    if (!this.ctx || !this.masterGain) return;
+    const t = this.ctx.currentTime;
+    
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
     
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(100, t);
@@ -251,14 +264,13 @@ class SoundManager {
     gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
     
     osc.connect(gain);
-    gain.connect(this.masterGain!);
+    gain.connect(this.masterGain);
     osc.start(t);
     osc.stop(t + 0.2);
   }
 
   public playSizzle() {
     this.init();
-    // High frequency noise
     this.playNoise(1.0, 0.4, 3000);
   }
 }

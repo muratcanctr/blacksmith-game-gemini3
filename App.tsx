@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   GameState, 
@@ -73,6 +74,38 @@ function App() {
     }
   }, [currentCustomer]);
 
+  // AUTO-START MUSIC ON INTERACTION
+  useEffect(() => {
+    // 1. Attempt to start BGM immediately on mount. 
+    // (This will queue the logic, but sound might be blocked by browser until interaction)
+    soundManager.startBGM();
+
+    // 2. Add a one-time listener to UNLOCK audio on the first click/tap/key
+    const unlockAudio = () => {
+        soundManager.resumeContext().then(() => {
+            // Ensure it's playing if not muted
+            if (!isMusicMuted) {
+                soundManager.startBGM();
+            }
+        });
+        
+        // Clean up listeners
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('keydown', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+    };
+  }, []);
+
   // Global Keyboard Shortcuts for PC Experience
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
@@ -103,9 +136,8 @@ function App() {
     const muted = soundManager.toggleMute();
     setIsMusicMuted(muted);
     if (!muted) {
+        soundManager.resumeContext();
         soundManager.startBGM();
-    } else {
-        // Optional: Stop BGM if preferred, but toggling mute is smoother
     }
   };
 
@@ -137,8 +169,8 @@ function App() {
   }, [gameState.reputation, gameState.materials]);
 
   const handleStartDay = () => {
+    soundManager.resumeContext(); // Ensure audio is ready
     soundManager.playDayStart();
-    soundManager.startBGM(); // Start music on first day start
     setCustomersServed(0);
     setDailyStats({ gold: 0, rep: 0 });
     fetchCustomer();

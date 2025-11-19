@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import RetroButton from './RetroButton';
 import { soundManager } from '../services/soundService';
@@ -100,7 +99,7 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
         </div>
       )}
 
-      <div className="relative w-64 h-64 flex justify-center mb-8 z-20">
+      <div className="relative w-64 h-full max-h-[400px] flex justify-center mb-8 z-20">
          
          {/* Side Indicators (Visible outside the tube) */}
          <div 
@@ -157,7 +156,7 @@ const QuenchingGame: React.FC<QuenchingGameProps> = ({ onComplete }) => {
         variant="primary" 
         className="h-16 text-lg max-w-xs z-20"
       >
-        SUYA BATIR! (BOŞLUK)
+        SUYA BATIR!
       </RetroButton>
       
       <style>{`

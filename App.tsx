@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   GameState, 
@@ -306,57 +305,59 @@ function App() {
 
   // --- RENDER ---
   return (
-    // PC GAME CONTAINER: Black background (Letterbox), centered content
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-['Press_Start_2P'] select-none">
+    // MAIN CONTAINER: Responsive layout
+    // Mobile: Full width/height. Desktop: Fixed aspect ratio simulation (Letterbox)
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-['Press_Start_2P'] select-none touch-none">
       
-      {/* GAME WINDOW: Fixed Aspect Ratio (16:9) */}
       <div 
         ref={gameContainerRef}
-        className="relative w-full max-w-[1600px] aspect-video bg-stone-900 text-stone-200 shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full h-full md:h-auto md:aspect-video md:max-w-[1600px] bg-stone-900 text-stone-200 shadow-2xl overflow-hidden flex flex-col"
       >
         
-        {/* Header */}
-        <header className="h-20 bg-stone-800 border-b-4 border-black flex items-center justify-between px-8 shrink-0 z-30 shadow-md">
-          <div className="text-yellow-500 text-lg flex flex-col">
-            <span className="mb-2 tracking-widest text-shadow">BLACKSMITH SIMULATOR</span>
-            <span className="text-stone-400 text-xs">GÜN: {gameState.day}</span>
+        {/* Header - Mobile: Compact/Vertical, Desktop: Horizontal */}
+        <header className="bg-stone-800 border-b-4 border-black flex flex-col md:flex-row items-center justify-between p-3 md:px-8 shrink-0 z-30 shadow-md gap-2 md:gap-0 min-h-[80px] md:h-20">
+          {/* Title */}
+          <div className="text-yellow-500 flex flex-row md:flex-col items-center gap-2 md:gap-0">
+            <span className="text-sm md:text-lg tracking-widest text-shadow whitespace-nowrap">BLACKSMITH SIM</span>
+            <span className="text-stone-400 text-[10px] md:text-xs">GÜN: {gameState.day}</span>
           </div>
           
-          <div className="flex gap-6 items-center">
-            {/* Music Toggle */}
+          {/* Stats & Controls */}
+          <div className="flex gap-2 md:gap-6 items-center flex-wrap justify-center">
+            {/* Music Toggle (Icon only on mobile) */}
             <button 
                 onClick={toggleMusic} 
                 className="bg-stone-700 p-2 border-2 border-stone-500 text-xs text-white hover:bg-stone-600 active:translate-y-1"
             >
-                {isMusicMuted ? '🔇 MÜZİK KAPALI' : '🎵 MÜZİK AÇIK'}
+                {isMusicMuted ? '🔇' : '🎵'} <span className="hidden sm:inline">{isMusicMuted ? 'KAPALI' : 'AÇIK'}</span>
             </button>
 
             {phase !== 'DAY_START' && phase !== 'DAY_SUMMARY' && (
-               <div className="text-sm text-stone-400 mr-4 border-r-2 border-stone-600 pr-6">
-                  Müşteri: {customersServed + 1}/{maxCustomers}
+               <div className="hidden sm:block text-[10px] md:text-sm text-stone-400 mr-2 border-r-2 border-stone-600 pr-4">
+                  {customersServed + 1}/{maxCustomers}
                </div>
             )}
-            <div className="bg-black px-4 py-2 border-2 border-stone-600 text-yellow-400 text-sm shadow-inner min-w-[120px] text-center">
+            <div className="bg-black px-2 py-1 md:px-4 md:py-2 border-2 border-stone-600 text-yellow-400 text-xs md:text-sm shadow-inner text-center">
               <span>💰 {gameState.gold}</span>
             </div>
-            <div className="bg-black px-4 py-2 border-2 border-stone-600 text-blue-400 text-sm shadow-inner min-w-[100px] text-center">
+            <div className="bg-black px-2 py-1 md:px-4 md:py-2 border-2 border-stone-600 text-blue-400 text-xs md:text-sm shadow-inner text-center">
               <span>⭐ {gameState.reputation}</span>
             </div>
             
-            {/* PC Control Hint */}
+            {/* PC Control Hint (Hidden on Mobile) */}
             <div className="hidden lg:flex flex-col items-end text-[10px] text-stone-500 ml-4">
                <span>[F] Tam Ekran</span>
-               <span>[ESC] Menü/Çıkış</span>
+               <span>[ESC] Menü</span>
             </div>
             
-            <button onClick={toggleFullscreen} className="lg:hidden bg-stone-700 p-2 border-2 border-stone-500 text-[10px]">
+            <button onClick={toggleFullscreen} className="hidden md:block lg:hidden bg-stone-700 p-2 border-2 border-stone-500 text-[10px]">
                [ ]
             </button>
           </div>
         </header>
 
-        {/* Main Area */}
-        <main className="flex-grow relative flex flex-col items-center justify-center p-8 bg-[url('https://picsum.photos/1600/900?grayscale&blur=2')] bg-cover bg-center">
+        {/* Main Area - Responsive Padding */}
+        <main className="flex-grow relative flex flex-col items-center justify-center p-4 md:p-8 bg-[url('https://picsum.photos/1600/900?grayscale&blur=2')] bg-cover bg-center">
           <div className="absolute inset-0 bg-stone-900/85 backdrop-blur-sm"></div>
 
           {/* Shop Overlay */}
@@ -371,17 +372,17 @@ function App() {
 
           {/* PHASE: DAY START */}
           {phase === 'DAY_START' && !showShop && (
-             <div className="relative z-10 w-full max-w-2xl bg-stone-800 border-4 border-green-700 retro-border p-12 text-center animate-[fadeIn_0.5s_ease-out] shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-               <h1 className="text-5xl text-yellow-500 mb-4 text-shadow-lg">GÜN {gameState.day}</h1>
-               <p className="text-stone-400 text-sm mb-12">Dükkan hazırlıklarını tamamla.</p>
-               <div className="flex gap-8 justify-center">
-                 <div className="w-1/2">
-                    <RetroButton variant="warning" fullWidth onClick={() => setShowShop(true)} className="h-16 text-lg">
+             <div className="relative z-10 w-full max-w-2xl bg-stone-800 border-4 border-green-700 retro-border p-6 md:p-12 text-center animate-[fadeIn_0.5s_ease-out] shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+               <h1 className="text-3xl md:text-5xl text-yellow-500 mb-4 text-shadow-lg">GÜN {gameState.day}</h1>
+               <p className="text-stone-400 text-xs md:text-sm mb-8 md:mb-12">Dükkan hazırlıklarını tamamla.</p>
+               <div className="flex flex-col sm:flex-row gap-4 md:gap-8 justify-center">
+                 <div className="w-full sm:w-1/2">
+                    <RetroButton variant="warning" fullWidth onClick={() => setShowShop(true)} className="h-14 md:h-16 text-sm md:text-lg">
                       DÜKKAN (MARKET)
                     </RetroButton>
                  </div>
-                 <div className="w-1/2">
-                    <RetroButton variant="success" fullWidth onClick={handleStartDay} className="h-16 text-lg animate-pulse">
+                 <div className="w-full sm:w-1/2">
+                    <RetroButton variant="success" fullWidth onClick={handleStartDay} className="h-14 md:h-16 text-sm md:text-lg animate-pulse">
                       KEPENKLERİ AÇ
                     </RetroButton>
                  </div>
@@ -391,14 +392,14 @@ function App() {
 
           {/* PHASE: DAY SUMMARY */}
           {phase === 'DAY_SUMMARY' && (
-             <div className="relative z-10 w-full max-w-xl bg-stone-800 border-4 border-blue-600 retro-border p-12 text-center animate-[fadeIn_0.5s_ease-out]">
-                <h2 className="text-3xl text-blue-400 mb-8 border-b-4 border-stone-600 pb-4">GÜN ÖZETİ</h2>
-                <div className="space-y-6 mb-12 text-left px-8 text-lg">
-                   <div className="flex justify-between items-center"><span className="text-stone-400">Hizmet Verilen:</span><span className="text-white text-xl">{customersServed}</span></div>
-                   <div className="flex justify-between items-center"><span className="text-stone-400">Kazanılan Altın:</span><span className="text-yellow-400 text-xl">+{dailyStats.gold}</span></div>
-                   <div className="flex justify-between items-center"><span className="text-stone-400">Kazanılan İtibar:</span><span className="text-blue-400 text-xl">+{dailyStats.rep}</span></div>
+             <div className="relative z-10 w-full max-w-xl bg-stone-800 border-4 border-blue-600 retro-border p-6 md:p-12 text-center animate-[fadeIn_0.5s_ease-out]">
+                <h2 className="text-2xl md:text-3xl text-blue-400 mb-6 md:mb-8 border-b-4 border-stone-600 pb-4">GÜN ÖZETİ</h2>
+                <div className="space-y-4 md:space-y-6 mb-8 md:mb-12 text-left px-2 md:px-8 text-sm md:text-lg">
+                   <div className="flex justify-between items-center"><span className="text-stone-400">Hizmet:</span><span className="text-white text-lg md:text-xl">{customersServed}</span></div>
+                   <div className="flex justify-between items-center"><span className="text-stone-400">Altın:</span><span className="text-yellow-400 text-lg md:text-xl">+{dailyStats.gold}</span></div>
+                   <div className="flex justify-between items-center"><span className="text-stone-400">İtibar:</span><span className="text-blue-400 text-lg md:text-xl">+{dailyStats.rep}</span></div>
                 </div>
-                <RetroButton variant="primary" fullWidth onClick={handleNextDay} className="h-16 text-xl">SONRAKİ GÜN &gt;&gt;</RetroButton>
+                <RetroButton variant="primary" fullWidth onClick={handleNextDay} className="h-14 md:h-16 text-lg md:text-xl">SONRAKİ GÜN &gt;&gt;</RetroButton>
              </div>
           )}
 
@@ -406,11 +407,11 @@ function App() {
           {phase === 'IDLE' && (
             <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
               {loadingCustomer ? (
-                <div className="text-center animate-pulse"><p className="text-2xl text-stone-400">Müşteri Yaklaşıyor...</p></div>
+                <div className="text-center animate-pulse"><p className="text-lg md:text-2xl text-stone-400">Müşteri Yaklaşıyor...</p></div>
               ) : currentCustomer ? (
-                <div className="w-full bg-stone-800 border-4 border-stone-600 retro-border p-10 flex gap-8 animate-[fadeIn_0.5s_ease-out] shadow-2xl items-start">
+                <div className="w-full bg-stone-800 border-4 border-stone-600 retro-border p-4 md:p-10 flex flex-col md:flex-row gap-4 md:gap-8 animate-[fadeIn_0.5s_ease-out] shadow-2xl items-center md:items-start">
                     {/* Left: Avatar */}
-                    <div className={`w-48 h-48 ${currentCustomer.isBoss ? 'bg-red-900 border-red-500' : 'bg-stone-700 border-stone-500'} border-4 shrink-0 overflow-hidden retro-border`}>
+                    <div className={`w-32 h-32 md:w-48 md:h-48 ${currentCustomer.isBoss ? 'bg-red-900 border-red-500' : 'bg-stone-700 border-stone-500'} border-4 shrink-0 overflow-hidden retro-border`}>
                       <img 
                         src={currentCustomer.avatarUrl} 
                         alt={currentCustomer.name}
@@ -419,22 +420,22 @@ function App() {
                     </div>
                     
                     {/* Right: Info */}
-                    <div className="flex-grow flex flex-col gap-4 h-full justify-between">
+                    <div className="flex-grow flex flex-col gap-2 md:gap-4 w-full h-full justify-between">
                         <div>
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h2 className={`text-2xl mb-2 ${currentCustomer.isBoss ? 'text-red-500' : 'text-green-400'}`}>{currentCustomer.name}</h2>
+                                    <h2 className={`text-lg md:text-2xl mb-2 ${currentCustomer.isBoss ? 'text-red-500' : 'text-green-400'}`}>{currentCustomer.name}</h2>
                                     <div className="flex gap-2">
-                                        <span className="bg-stone-900 text-stone-300 px-2 py-1 text-xs border border-stone-600">{currentCustomer.requestType}</span>
-                                        {currentCustomer.isBoss && <span className="bg-red-600 text-white px-2 py-1 text-xs border border-red-800 animate-pulse">BOSS</span>}
+                                        <span className="bg-stone-900 text-stone-300 px-2 py-1 text-[10px] md:text-xs border border-stone-600">{currentCustomer.requestType}</span>
+                                        {currentCustomer.isBoss && <span className="bg-red-600 text-white px-2 py-1 text-[10px] md:text-xs border border-red-800 animate-pulse">BOSS</span>}
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-6 bg-black/40 p-6 border-l-4 border-stone-500 italic text-stone-300 text-lg min-h-[100px]">
+                            <div className="mt-4 md:mt-6 bg-black/40 p-4 md:p-6 border-l-4 border-stone-500 italic text-stone-300 text-sm md:text-lg min-h-[80px] md:min-h-[100px]">
                                 "{currentCustomer.dialogue}"
                             </div>
                         </div>
-                        <RetroButton variant="success" fullWidth className="h-16 text-xl mt-4" onClick={startCraftingProcess}>SİPARİŞİ AL</RetroButton>
+                        <RetroButton variant="success" fullWidth className="h-14 md:h-16 text-lg md:text-xl mt-4" onClick={startCraftingProcess}>SİPARİŞİ AL</RetroButton>
                     </div>
                 </div>
               ) : null}
@@ -443,7 +444,7 @@ function App() {
 
           {/* CRAFTING FLOW CONTAINER */}
           {isCraftingPhase && (
-              <div className="relative z-10 w-full max-w-4xl h-full max-h-[600px] flex flex-col items-center justify-center">
+              <div className="relative z-10 w-full max-w-4xl h-full max-h-[800px] flex flex-col items-center justify-center">
                   
                   {/* 1. Material Selection */}
                   {phase === 'CRAFTING_SETUP' && !selectedMaterial && (
@@ -492,12 +493,12 @@ function App() {
 
                   {/* 5. Result */}
                   {phase === 'RESULT' && craftedItem && (
-                  <div className="w-full max-w-md mx-auto bg-stone-800 border-4 border-yellow-600 retro-border p-12 text-center animate-[popIn_0.3s_ease-out] shadow-[0_0_100px_rgba(234,179,8,0.2)]">
-                      <h2 className="text-3xl text-yellow-400 mb-6">ÜRETİM BAŞARILI</h2>
-                      <div className="text-8xl mb-8 drop-shadow-lg">⚔️</div>
-                      <div className="text-4xl text-yellow-400 font-bold mb-4 text-shadow">+{craftedItem.value} G</div>
-                      <div className="text-stone-400 mb-8 text-lg">KALİTE: <span className="text-white">{craftedItem.quality}/100</span></div>
-                      <RetroButton variant="primary" fullWidth onClick={handleNextCustomer} className="h-16 text-xl">MÜŞTERİYİ GÖNDER</RetroButton>
+                  <div className="w-full max-w-md mx-auto bg-stone-800 border-4 border-yellow-600 retro-border p-6 md:p-12 text-center animate-[popIn_0.3s_ease-out] shadow-[0_0_100px_rgba(234,179,8,0.2)]">
+                      <h2 className="text-2xl md:text-3xl text-yellow-400 mb-4 md:mb-6">ÜRETİM BAŞARILI</h2>
+                      <div className="text-6xl md:text-8xl mb-6 md:mb-8 drop-shadow-lg">⚔️</div>
+                      <div className="text-2xl md:text-4xl text-yellow-400 font-bold mb-2 md:mb-4 text-shadow">+{craftedItem.value} G</div>
+                      <div className="text-stone-400 mb-6 md:mb-8 text-sm md:text-lg">KALİTE: <span className="text-white">{craftedItem.quality}/100</span></div>
+                      <RetroButton variant="primary" fullWidth onClick={handleNextCustomer} className="h-14 md:h-16 text-lg md:text-xl">MÜŞTERİYİ GÖNDER</RetroButton>
                   </div>
                   )}
               </div>
